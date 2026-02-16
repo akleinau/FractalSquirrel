@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Fractal Squirrel </title>
+	<meta name="author" content="anna">
+	
+</head>
+
+<body onload="setup();" onkeypress="eingabe(event);" ontouchstart="touchEingabe(event);" onmousedown="touchEingabe(event);">
+	
+	 <canvas id="Fraktal" >   </canvas>   
+	 <img id= "Eichhoernchen" src="EichhoernchenGIF.gif"
+	 height="200" width="100" > </img>
+
+</body>
+
+<script language="javascript">
+var canvas;
+var ctx;
+var img;
+var timer = setInterval(draw,50);
+var firstShouldTurn = 1;
+var firstLine;
+var ebene;
+var drehEbene;
+var newDrehEbene;
+var weg;
+var deleteFirstWeg;
+var leftorright;
+var VergroesserungX;
+var VergroesserungY;
+var BewegungX = 0;
+var BewegungY = 0;
+var richtigePosLine3;
+var zaehler = 0;
+var rotierZurueck = 0;
+
+//Standardfunktion um eine Linie zu erstellen
+function line(line) {
+	ctx.beginPath();
+	ctx.moveTo(line[0],line[1]);
+	ctx.lineTo(line[2],line[3]);
+	ctx.stroke();
+	ctx.closePath();	
+}
+
+//Rekursive Funktion zur Erstellung des Baumes
+function nextLine(lineF, shouldTurn) {
+	var leftShouldTurn = 0;
+	var rightShouldTurn = 0;
+	
+  if (shouldTurn | ebene < 5 | lineF[3] > -1500 & lineF[3] < 3000) {
+	//Probe und Handlung wenn der Ast sich drehen soll
+	if(shouldTurn !== 0){
+		if (drehEbene == ebene & lineF[3] <=0){
+			var changeLine = firstLine;
+			var winkel1 = Math.PI/6 * shouldTurn;
+			//console.log("Turn: %i , ebene: %i",shouldTurn, ebene);			
+			var newFirstLine = new Array(4);
+
+			newFirstLine[0]= changeLine[0]*Math.cos(winkel1) - changeLine[1]*Math.sin(winkel1);
+			newFirstLine[1]= changeLine[0]*Math.sin(winkel1) + changeLine[1]*Math.cos(winkel1);	
+
+			newFirstLine[2]= changeLine[2]*Math.cos(winkel1) - changeLine[3]*Math.sin(winkel1);
+			newFirstLine[3]= changeLine[2]*Math.sin(winkel1) + changeLine[3]*Math.cos(winkel1);	 	
+									
+			firstLine = newFirstLine;
+							
+			drehEbene++;
+			newDrehEbene++;
+			weg.push(1);
+			
+			//Vergroeßerung
+			aktualisierVergroesserung(); 
+			richtigePosLine3 = 300;			
+			var speicherEbene = ebene;
+			ebene = 0;
+			aktualisierVerschiebung(firstLine,weg[0]);
+			ebene = speicherEbene;			
+			rotierZurueck = 11 * shouldTurn;
+		}
+		//Löschen alter Äste aufgrund des Datenverbrauchs
+		else if (ebene != 0 & drehEbene -5 == ebene & lineF[1] < -1000) {
+			//console.log("Drehebene % Ebene %",drehEbene, ebene);
+			firstLine = lineF;
+			newDrehEbene -= 1;
+			deleteFirstWeg = true;
+			aktualisierVergroesserung();
+			//console.log("del");
+			
+		}
+	ebene++;
+	//Weitergabe des Drehbefehls
+	if (shouldTurn == 1) { leftShouldTurn = 1;}
+	else {rightShouldTurn = 1;}
+	if (weg.length < ebene | weg[ebene] == -1)
+	{   leftShouldTurn *= -1;
+		rightShouldTurn *= -1; }
+	}
+	
+	//Berechnung der neuen Äste
+	var vectorX = lineF[2]-lineF[0];
+	var vectorY = lineF[3]-lineF[1];
+	var winkel = Math.PI/6;
+	var s = 1.5;
+	var newLine = new Array(2);
+
+	var newVX= vectorX*Math.cos(winkel) - vectorY*Math.sin(winkel);
+	var newVY= vectorX*Math.sin(winkel) + vectorY*Math.cos(winkel);	
+	
+	var MnewVX= vectorX*Math.cos(-winkel) - vectorY*Math.sin(-winkel);
+	var MnewVY= vectorX*Math.sin(-winkel) + vectorY*Math.cos(-winkel);	
+	
+	newLine[0]= [lineF[2],lineF[3],lineF[2]+newVX/s,lineF[3]+newVY/s];
+	newLine[1]= [lineF[2],lineF[3],lineF[2]+MnewVX/s,lineF[3]+MnewVY/s];
+		
+	line(newLine[0]);
+	line(newLine[1]);
+		
+	//Selbstaufruf für die nächste Ebene an Bäumen
+	if (Math.sqrt(vectorX*vectorX+vectorY*vectorY)>12) {
+		nextLine(newLine[0], rightShouldTurn);
+		nextLine(newLine[1], leftShouldTurn);
+		
+	}
+  }
+}
+
+//Setup
+function setup(){
+	canvas = document.getElementById("Fraktal");
+	canvas.width = window.innerWidth - 50;
+	canvas.height = window.innerHeight - 50;
+	document.getElementById("Eichhoernchen").style.position = "absolute"
+	document.getElementById("Eichhoernchen").style.top = canvas.height-170 + "px";
+	document.getElementById("Eichhoernchen").style.left = canvas.width/2+10 + "px";
+	if (canvas.getContext){
+		 ctx = canvas.getContext("2d");
+		 ctx.translate(canvas.width/2,canvas.height -80);
+		 ctx.rotate(radians = (Math.PI/180)*180);
+		 w = 0;
+		 h = 0;
+		 drehebene = 0;
+		 newDrehEbene = 0;
+		 firstLine = [0,0,0,300];
+		 ctx.lineWidth = 3;
+		
+		 weg = [1];
+		 leftorright = 1;
+		 richtigePosLine3 = 300;
+		 bewegungX = 0;
+		 bewegungY = 0;
+		 zaehler = 0; 
+		 aktualisierVergroesserung();
+		 
+	}
+	else {
+		alert("Der Browser ist leider zu alt.");
+		clearInterval(timer);
+	}
+}
+	
+//im Standardintervall aufgerufene Funktion
+function draw(){
+	ctx.clearRect(-canvas.width,-canvas.height,canvas.width*2,canvas.height*4);
+	
+	if (deleteFirstWeg) {
+		weg.shift();
+		deleteFirstWeg = false;
+	}
+	
+	firstLine[1] -= 5;
+	firstLine[3] -= 5;
+	ebene = 0;
+	drehEbene = newDrehEbene;
+	
+	richtigePosLine3 -= 5;
+	firstLine[0] -= VergroesserungX;
+	firstLine[1] -= VergroesserungY;    
+	
+	aktualisierVerschiebung(firstLine,weg[0]);	
+	ebene = 0;
+		
+	
+	
+	if (rotierZurueck == 11) {
+		ctx.rotate(-Math.PI/6);
+		rotierZurueck--;
+	}
+	else if (rotierZurueck >0) {
+		rotierZurueck--;
+		ctx.rotate((Math.PI/6)/10)
+	}
+	else if (rotierZurueck == -11) {
+		ctx.rotate(Math.PI/6);
+		rotierZurueck++;
+	}
+	else if (rotierZurueck <0) {
+		rotierZurueck++;
+		ctx.rotate((-Math.PI/6)/10)
+	}
+	
+	
+	 ctx.strokeStyle = 'rgb(50,50,150)';					
+	line(firstLine);
+	nextLine(firstLine, weg[0]);						
+}
+	
+function aktualisierVergroesserung() {
+		var firstLineVX = firstLine[2]-firstLine[0];
+		var firstLineVY = firstLine[3]-firstLine[1];
+		
+		VergroesserungX = firstLineVX/(2*60);
+		VergroesserungY = firstLineVY/(2*60);
+		
+
+}
+	
+function eingabe(event) {
+	console.log("eingabe");
+	if (event.keyCode == 100)
+	{
+		weg[weg.length-1] = -1;
+	}
+	if (event.keyCode == 97) 
+	{
+		weg[weg.length-1] = 1;
+	}
+}
+
+function touchEingabe(event) {
+	console.log("eingabe");
+	if (event.pageX < window.innerWidth/2) {
+		weg[weg.length-1] = 1;
+	}
+	else {
+		weg[weg.length-1] = -1;
+	}
+}
+
+function aktualisierVerschiebung(lineF, shouldTurn) {
+	var leftShouldTurn = 0;
+	var rightShouldTurn = 0;
+	
+	//Anpassung der Position des Stammes
+	if(shouldTurn !== 0){
+		if (drehEbene == ebene){		
+			firstLine[0] -= lineF[2];
+			firstLine[2] -= lineF[2];
+			firstLine[1] -= lineF[3]-richtigePosLine3;
+			firstLine[3] -= lineF[3]-richtigePosLine3;		
+		}
+		ebene++;
+	
+		//Weitergabe des Drehbefehls
+		if (shouldTurn == 1) { leftShouldTurn = 1;}
+		else {rightShouldTurn = 1;}
+		if (weg.length < ebene | weg[ebene] == -1)
+		{   leftShouldTurn *= -1;
+			rightShouldTurn *= -1; 
+		}
+	}
+	
+	//Berechnung der neuen Äste
+	var vectorX = lineF[2]-lineF[0];
+	var vectorY = lineF[3]-lineF[1];
+	var winkel = Math.PI/6;
+	var s = 1.5;
+	var newLine = new Array(2);
+
+	var newVX= vectorX*Math.cos(winkel) - vectorY*Math.sin(winkel);
+	var newVY= vectorX*Math.sin(winkel) + vectorY*Math.cos(winkel);	
+	
+	var MnewVX= vectorX*Math.cos(-winkel) - vectorY*Math.sin(-winkel);
+	var MnewVY= vectorX*Math.sin(-winkel) + vectorY*Math.cos(-winkel);	
+	
+	newLine[0]= [lineF[2],lineF[3],lineF[2]+newVX/s,lineF[3]+newVY/s];
+	newLine[1]= [lineF[2],lineF[3],lineF[2]+MnewVX/s,lineF[3]+MnewVY/s];
+
+		
+	//Selbstaufruf für die nächste Ebene an Bäumen
+	if (Math.sqrt(vectorX*vectorX+vectorY*vectorY)>50) {
+		aktualisierVerschiebung(newLine[0], rightShouldTurn);
+		aktualisierVerschiebung(newLine[1], leftShouldTurn);	
+	}
+}
+	
+	
+</script>
+
+</html>
